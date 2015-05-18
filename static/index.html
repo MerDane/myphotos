@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other кhead content must come *after* these tags -->
+    <title>Загрузка фото - тестовое задание</title>
+
+    <!-- Bootstrap -->
+
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="jQuery-File-Upload/uploadfile.css" rel="stylesheet">
+
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+     <script>
+
+        var initScript = function() {
+
+            $("#add_photo_uploader").uploadFile({
+                url:"/api/upload",
+                fileName:"myfile",
+                allowedTypes:"png, gif,jpg,jpeg,tiff",
+                maxFileSize : 1024 * 1024 * 10,
+                //onSubmit:function(files) {
+                //    console.log( 'files:' +JSON.stringify(files));
+                //},
+                afterUploadAll:function() {
+
+                    console.log( 'finish uploading');
+                },
+                onError: function(files,status,errMsg) {
+                     console.log(JSON.stringify(files));
+                     console.log('status '+ status);
+                     console.log(errMsg);
+                },
+                onSuccess:function(files,data,xhr) {
+                    console.log(data);
+                    if (data.status == 'OK') {
+                        console.log('enable button');
+                        $("#modal-button-ok").prop("disabled",false );
+                        $("#add-file-id").attr("value", data.id );
+
+                    } else if (data.status == 'Exist') {
+                        bootbox.alert("Ошибка: файл уже загружен");
+                    } else if (data.status == 'BadType') {
+                        bootbox.alert("Ошибка: это не фотография");
+                    } else if (data.status == 'BadExif') {
+                        bootbox.alert("Ошибка: отсутствуют метаданные");
+                    } else if (data.status == 'VeryOld') {
+                        bootbox.alert("Ошибка: файл слишком старый или отсутствует дата");
+                    } else if (data.status == 'DataError') {
+                        bootbox.alert("Ошибка: не правильно задано наименование фотографии");
+                    } else {
+                        bootbox.alert("Ошибка: 500");
+                    }
+
+
+                },
+                returnType: 'json',
+            });
+
+            console.log('init script Ok')
+            loadList();
+        }
+
+        function refresh(){
+            $('#table-body').html('');
+            loadList();
+        }
+
+        function show_big(id,name){
+            $("#img-big").attr("src", '/img/'+id);
+            $("#photoModalLabel").text(name)
+            $("#imgModal").modal('show');
+
+        }
+
+        var loadList = function() {
+
+            $.get('/api/index', function(data) {
+
+                var table = $('#table-body');
+
+                if(data && data.length){
+                    for( var item in data ) {
+                      var button = '<button type="button" onclick="btn_click_del(\''+ data[item].sha1 + '\' )" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Del</button>';
+
+                        append_str = '<tr><td><img  onclick="show_big(\''+ data[item].sha1 + '\',\''+ data[item].name + '\' )"  height=60  src="/img/'+ data[item].sha1 +'" ></td>'
+
+                        append_str += '<td width="100px">'+ data[item].name +'<td>'
+                        append_str += '<td>'+ data[item].data_create +'<td>'
+                        append_str += '<td>'+ data[item].cam +'<br>Производ:<b><i>'+ data[item].maker +'</i></b><td>'
+                        append_str += '<td> '+ data[item].ts +'<td>'
+                        append_str += '<td> '+ data[item].size +'<td>'
+
+                        append_str += '<td>'+ button +'</td></tr>'
+                      table.append( append_str );
+                        console.log(data[item]);
+                    } ;
+                } else {
+                    table.append('<tr class="danger"><td colspan="7" >список пустой</td></tr>');
+                }
+            });
+        };
+
+        var key_index = 0;
+
+
+        function btn_click_add_photo(ob) {
+             $("#modal-button-ok").prop("disabled",true );
+             $("#myModal").modal('show');
+        }
+
+        function btn_click_del(ob) {
+            data = { "sha1" : ob };
+            $.post('/api/delphoto', data,function(data) {
+                  refresh();
+             });
+
+        }
+
+        function addPhoto(ob) {
+            var data =  {
+                            "id"   : $("#add-file-id").attr('value'),
+                            "name" : $("#add_photo_name").prop('value')
+                        };
+            console.log(data);
+            $.post('/api/photoname', data,function(data) {
+                $("#add_user_name").prop('value', '');
+                 refresh();
+
+             });
+        }
+
+        function alert_show() {
+          bootbox.alert("Ошибка:");
+         }
+
+
+    window.onload = initScript;
+    </script>
+
+  </head>
+  <body>
+
+    <div class="container">
+
+      <div class="blog-header">
+        <h1 class="blog-title"> Сервис настроек</h1>
+      </div>
+
+      <div class="blog-header">
+        <h4 class="blog-title">Пользователи</h4>
+      </div>
+
+
+      <div class="panel panel-default">
+
+
+          <div class="bootstrap-table">
+
+              <table  class="table table-hover" data-height="299" data-cache="false" data-toggle="table" style="margin-top: -41px;">
+                <thead>
+                  <tr height="90px">
+                      <th width="100px"> </th>
+                      <th width="100px">наименование</th>
+                      <th > дата съемки</th>
+                      <th > модель камеры</th>
+                      <th > производитель</th>
+                      <th > дата закачки</th>
+                      <th > размер</th>
+                      <th >  <div class="panel-heading" align="right">
+            <button  type="button" onclick=btn_click_add_photo(this) xtype="add" class="btn btn-default btn-sm">
+            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Добавить фото
+            </button>
+          </div>  </th>
+                  </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+          </div>
+      </div>
+
+
+
+<!-- Modal -->
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header danger">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="myModalLabel">Добавить Фотографию</h4>
+        </div>
+        <div class="modal-body">
+            <form role="form">
+                <div class="form-group">
+                        <label for="add_photo_name" class="control-label">Name</label>
+                        <input type="text"  id="add_photo_name" class="form-control"  >
+                </div>
+                <div class="form-group">
+                        <label for="add_photo_uploader" class="control-label">Upload</label>
+
+                        <div id="add_photo_uploader">Upload</div>
+
+                    <input id="add-file-id" type="hidden" >
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+
+         <button type="button" class="btn btn-default" data-dismiss="modal">Отмена</button>
+         <button type="button" id="modal-button-ok"  class="btn btn-primary" data-dismiss="modal" disabled  onclick="addPhoto(this)" >Запомнить</button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+    <div class="modal fade" id="imgModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header danger">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="photoModalLabel"></h4>
+        </div>
+        <div class="modal-body">
+
+            <img id="img-big" height="400" >
+
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+
+
+    <script src="bootbox.min.js"></script>
+    <script src="jQuery-File-Upload/jquery.uploadfile.js"></script>
+    <!--
+        <script src="http://hayageek.github.io/jQuery-Upload-File/jquery.uploadfile.min.js"></script>
+    -->
+
+  </body>
+</html>
