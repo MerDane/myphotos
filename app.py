@@ -14,6 +14,7 @@ app.config['cnn'] = pymysql.connect(host=app.config['DB_HOST'],
         user=app.config['DB_USER'],
         passwd= app.config['DB_PASS'],
         db=app.config['DB_NAME'],
+	charset='utf8',
         cursorclass=pymysql.cursors.DictCursor)
 
 
@@ -85,10 +86,10 @@ def upload_data():
 
     uploader.moveFile(file)
 
-    if not uploader.check_file_type():
-        uploader.delete()
-        response.data ='{"status":"BadType"}'
-        return response
+   # if not uploader.check_file_type():
+   #     uploader.delete()
+   #     response.data ='{"status":"BadType"}'
+   #     return response
 
     if not uploader.get_exif():
         uploader.delete()

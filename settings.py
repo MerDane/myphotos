@@ -12,6 +12,6 @@ DEBUG= True
 
 EXPIRE_DAYS = 365
 
-UPLOAD_FOLDER = '/home/akalend/projects/myphotos/static/uploaded'
+UPLOAD_FOLDER = '/home/myphotos/static/uploaded'
 ALLOWED_EXTENSIONS = set([ 'png', 'jpg', 'jpeg', 'gif', 'tiff'])
 MAX_CONTENT_LENGTH = 10 * 1024 * 1024
